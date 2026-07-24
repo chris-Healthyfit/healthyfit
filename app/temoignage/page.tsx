@@ -7,11 +7,22 @@ type Temoignage = {
   image: string;
 };
 
+import { headers } from "next/headers";
+
 async function getTemoignages(): Promise<Temoignage[]> {
   try {
-    const res = await fetch("http://localhost:3000/api/temoignages", {
-      cache: "no-store",
-    });
+    const h = await headers();
+
+    const host = h.get("host");
+    const protocol =
+      process.env.NODE_ENV === "development" ? "http" : "https";
+
+    const res = await fetch(
+      `${protocol}://${host}/api/temoignages`,
+      {
+        cache: "no-store",
+      }
+    );
 
     if (!res.ok) return [];
 
