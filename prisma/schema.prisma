@@ -1,0 +1,90 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./healthyfit.db"
+}
+
+model Seance {
+  id          Int      @id @default(autoincrement())
+   horaire     String   @default("")
+  titre       String
+  description String
+  duree       String
+  niveau      String
+  prix        String?
+  image       String
+  createdAt   DateTime @default(now())
+}
+model Coach {
+  id          Int      @id @default(autoincrement())
+  prenom      String
+  nom         String
+  telephone   String
+  facebook    String
+  description String
+  image       String
+ordre       Int      @default(0)
+
+  createdAt   DateTime @default(now())
+}
+model Club {
+  id          Int      @id @default(autoincrement())
+  titre       String
+  sousTitre   String
+  philosophie String
+  salle       String
+  image1      String
+  image2      String
+  bouton      String
+  createdAt   DateTime @default(now())
+}
+model Nutrition {
+  id              Int      @id @default(autoincrement())
+
+  titre           String
+  sousTitre       String
+
+  importance      String
+  accompagnement  String
+
+  imageHero       String
+  imageImportance String
+  imageCoach      String
+
+  bouton          String
+
+  createdAt       DateTime @default(now())
+  }
+model Temoignage {
+  id         Int      @id @default(autoincrement())
+  prenom     String
+  texte      String
+  image      String
+  ordre      Int      @default(0)
+  actif      Boolean  @default(true)
+  createdAt  DateTime @default(now())
+}
+model Galerie {
+  id         Int      @id @default(autoincrement())
+  titre      String
+  categorie  String
+  image      String
+  ordre      Int      @default(0)
+  actif      Boolean  @default(true)
+  createdAt  DateTime @default(now())
+}
+model Contact {
+  id             Int      @id @default(autoincrement())
+  nom            String
+  adresse        String
+  telephone      String
+  email          String
+  horaires       String
+  facebook       String
+  googleMaps     String
+  introduction   String
+  createdAt      DateTime @default(now())
+}
