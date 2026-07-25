@@ -98,13 +98,18 @@ export default function AdminCoachs() {
       formData.append("file", fichier);
 
       const upload = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
+  method: "POST",
+  body: formData,
+});
 
-      const resultat = await upload.json();
+if (!upload.ok) {
+  alert("Erreur lors de l'upload de l'image.");
+  return;
+}
 
-      imageUrl = resultat.image;
+const resultat = await upload.json();
+
+imageUrl = resultat.url;
     }
 
     await fetch(url, {
