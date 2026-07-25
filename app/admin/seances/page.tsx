@@ -61,7 +61,7 @@ export default function AdminPage() {
     setDescription(seance.description);
     setDuree(seance.duree);
     setNiveau(seance.niveau);
-    ssetPrix(seance.prix);
+    setPrix(seance.prix);
     setImage(seance.image);
   }
 
