@@ -9,7 +9,7 @@ type Seance = {
   description: string;
   duree: string;
   niveau: string;
-  calories: string;
+  prix: string;
   image: string;
 };
 
@@ -61,7 +61,7 @@ export default function AdminPage() {
     setDescription(seance.description);
     setDuree(seance.duree);
     setNiveau(seance.niveau);
-    setPrix(seance.calories);
+    ssetPrix(seance.prix);
     setImage(seance.image);
   }
 
@@ -98,7 +98,7 @@ export default function AdminPage() {
       });
 
       const resultat = await upload.json();
-      imageUrl = resultat.image;
+imageUrl = resultat.url;
     }
 
     await fetch(url, {
@@ -107,14 +107,14 @@ export default function AdminPage() {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        horaire,
-        titre,
-        description,
-        duree,
-        niveau,
-        calories: prix,
-        image: imageUrl,
-      }),
+  horaire,
+  titre,
+  description,
+  duree,
+  niveau,
+  prix,
+  image: imageUrl,
+})
     });
 
     setHoraire("");
@@ -414,7 +414,7 @@ export default function AdminPage() {
                           borderRadius: "999px",
                         }}
                       >
-                        💶 {seance.calories} €
+                        💶 {seance.prix} €
                       </span>
 
                       <span
