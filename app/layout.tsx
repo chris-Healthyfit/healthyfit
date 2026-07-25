@@ -13,15 +13,56 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  metadataBase: new URL("https://healthyfit.be"), // ou ton URL Vercel tant que tu n'as pas le domaine
+  metadataBase: new URL("https://www.healthyfit.be"),
+
   title: {
-    default: "HealthyFit",
+    default: "HealthyFit ",
     template: "%s | HealthyFit",
   },
-  description:
-    "HealthyFit à Péruwelz : séances collectives, coaching sportif, nutrition et bien-être.",
-};
 
+  description:
+    "HealthyFit à Péruwelz : séances collectives, coaching sportif, nutrition, bien-être et accompagnement personnalisé.",
+
+  keywords: [
+    "HealthyFit",
+    "Péruwelz",
+    "Salle de sport",
+    "Coaching sportif",
+    "Nutrition",
+    "Remise en forme",
+    "Fitness",
+    "Belgique",
+    "Herbalife",
+  ],
+
+  authors: [{ name: "HealthyFit" }],
+
+  creator: "HealthyFit",
+
+  publisher: "HealthyFit",
+
+  openGraph: {
+    title: "HealthyFit | Sport • Nutrition • Bien-être",
+    description:
+      "Rejoignez HealthyFit à Péruwelz pour transformer votre santé grâce au sport, à la nutrition et à un accompagnement personnalisé.",
+    url: "https://www.healthyfit.be",
+    siteName: "HealthyFit",
+    locale: "fr_BE",
+    type: "website",
+  },
+
+  twitter: {
+    card: "summary_large_image",
+    title: "HealthyFit",
+    description:
+      "Sport • Nutrition • Bien-être à Péruwelz",
+  },
+
+  robots: {
+    index: true,
+    follow: true,
+  },
+};
 export default function RootLayout({
   children,
 }: Readonly<{
