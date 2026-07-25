@@ -2,6 +2,7 @@
 
 import Navbar from "@/components/Navbar";
 import { useEffect, useState } from "react";
+export const dynamic = "force-dynamic";
 
 type Photo = {
   id: number;

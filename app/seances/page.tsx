@@ -1,5 +1,6 @@
 import Navbar from "@/components/Navbar";
 import { prisma } from "@/lib/prisma";
+export const dynamic = "force-dynamic";
 
 type Seance = {
   id: number;

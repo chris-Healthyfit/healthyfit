@@ -1,4 +1,5 @@
 import Navbar from "@/components/Navbar";
+export const dynamic = "force-dynamic";
 
 type Temoignage = {
   id: number;
