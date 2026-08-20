@@ -2,19 +2,24 @@
 
 import { useEffect, useState } from "react";
 
+type Compte = {
+  id: number;
+  identifiant: string;
+  actif: boolean;
+};
+
 type CoachRow = {
   id: number;
   prenom: string;
   nom: string;
-  compte: {
-    id: number;
-    identifiant: string;
-    actif: boolean;
-  } | null;
+  compte: Compte | null;
 };
+
+type Orphelin = Compte & { prenom: string; nom: string };
 
 export default function ComptesCoachPage() {
   const [coachs, setCoachs] = useState<CoachRow[]>([]);
+  const [orphelins, setOrphelins] = useState<Orphelin[]>([]);
   const [coachId, setCoachId] = useState("");
   const [identifiant, setIdentifiant] = useState("");
   const [password, setPassword] = useState("");
@@ -22,10 +27,15 @@ export default function ComptesCoachPage() {
   const [erreur, setErreur] = useState("");
   const [resetId, setResetId] = useState<number | null>(null);
   const [resetPassword, setResetPassword] = useState("");
+  const [linkCoachId, setLinkCoachId] = useState<Record<number, string>>({});
 
   async function charger() {
     const res = await fetch("/api/club/coach-accounts");
-    if (res.ok) setCoachs(await res.json());
+    if (res.ok) {
+      const data = await res.json();
+      setCoachs(data.coachs ?? data);
+      setOrphelins(data.orphelins ?? []);
+    }
   }
 
   useEffect(() => {
@@ -46,7 +56,11 @@ export default function ComptesCoachPage() {
       setErreur(data.error ?? "Erreur.");
       return;
     }
-    setMessage(`Compte créé : ${data.identifiant} — le coach peut se connecter via « Mon espace coach ».`);
+    setMessage(
+      data.rattache
+        ? `Compte « ${data.identifiant} » rattaché au coach ✓`
+        : `Compte créé : ${data.identifiant} — connexion via « Mon espace coach ».`
+    );
     setCoachId("");
     setIdentifiant("");
     setPassword("");
@@ -74,6 +88,60 @@ export default function ComptesCoachPage() {
     charger();
   }
 
+  async function reparerLiens() {
+    setMessage("");
+    setErreur("");
+    const res = await fetch("/api/club/coach-accounts/relink", { method: "POST" });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setErreur(data.error ?? "Erreur.");
+      return;
+    }
+    const ok = (data.results ?? []).filter((r: { coachId: number | null }) => r.coachId);
+    setMessage(
+      ok.length
+        ? `${ok.length} compte(s) rattaché(s) automatiquement ✓`
+        : "Aucun compte orphelin à rattacher."
+    );
+    charger();
+  }
+
+  async function supprimerCompte(id: number, ident: string) {
+    if (!confirm(`Supprimer le compte « ${ident} » ?`)) return;
+    setMessage("");
+    setErreur("");
+    const res = await fetch(`/api/club/coach-accounts/${id}`, { method: "DELETE" });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setErreur(data.error ?? "Erreur.");
+      return;
+    }
+    setMessage(`Compte « ${ident} » supprimé.`);
+    charger();
+  }
+
+  async function rattacherOrphelin(adminId: number, ident: string) {
+    const cid = Number(linkCoachId[adminId]);
+    if (!cid) {
+      setErreur("Choisissez un coach à rattacher.");
+      return;
+    }
+    setMessage("");
+    setErreur("");
+    const res = await fetch(`/api/club/coach-accounts/${adminId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ coachId: cid }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setErreur(data.error ?? "Erreur.");
+      return;
+    }
+    setMessage(`Compte « ${ident} » rattaché ✓`);
+    charger();
+  }
+
   const sansCompte = coachs.filter((c) => !c.compte);
 
   return (
@@ -82,19 +150,87 @@ export default function ComptesCoachPage() {
         <div>
           <h1>🔑 Comptes coachs</h1>
           <p>
-            Créez les accès à l&apos;espace club. Utilisez un identifiant unique
-            (ex: <strong>amandine</strong>, pas <strong>chris</strong> ou{" "}
-            <strong>sarah</strong> qui sont réservés à la direction).
+            Gérez les accès à l&apos;espace club. Identifiants réservés direction :{" "}
+            <strong>chris</strong>, <strong>sarah</strong>.
           </p>
         </div>
-        <a href="/espace-club" className="hf-admin-btn hf-admin-btn-ghost">
-          Ouvrir l&apos;espace club →
-        </a>
+        <div className="hf-admin-header-actions">
+          <button
+            type="button"
+            className="hf-admin-btn hf-admin-btn-ghost hf-admin-btn-sm"
+            onClick={reparerLiens}
+          >
+            🔧 Réparer les liens
+          </button>
+          <a href="/espace-club" className="hf-admin-btn hf-admin-btn-ghost hf-admin-btn-sm">
+            Espace club →
+          </a>
+        </div>
       </div>
+
+      {orphelins.length > 0 && (
+        <div className="hf-admin-card" style={{ marginBottom: 28, borderColor: "rgba(212,175,55,0.4)" }}>
+          <h2 className="hf-admin-form-title">⚠️ Comptes orphelins</h2>
+          <p className="hf-admin-entity-meta" style={{ marginBottom: 16 }}>
+            Ces comptes existent mais ne sont liés à aucun coach (souvent après une
+            restauration). Rattachez-les ou supprimez-les.
+          </p>
+          {orphelins.map((o) => (
+            <div
+              key={o.id}
+              className="hf-admin-split"
+              style={{
+                gridTemplateColumns: "1fr auto auto auto",
+                alignItems: "end",
+                marginBottom: 12,
+                gap: 8,
+              }}
+            >
+              <div>
+                <strong>{o.identifiant}</strong>
+                <span className="hf-admin-entity-meta" style={{ marginLeft: 8 }}>
+                  {o.prenom} {o.nom}
+                </span>
+              </div>
+              <select
+                className="hf-admin-input hf-admin-select"
+                value={linkCoachId[o.id] ?? ""}
+                onChange={(e) =>
+                  setLinkCoachId((prev) => ({ ...prev, [o.id]: e.target.value }))
+                }
+              >
+                <option value="">Coach…</option>
+                {sansCompte.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.prenom} {c.nom}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className="hf-admin-btn hf-admin-btn-sm"
+                onClick={() => rattacherOrphelin(o.id, o.identifiant)}
+              >
+                Rattacher
+              </button>
+              <button
+                type="button"
+                className="hf-admin-btn hf-admin-btn-sm hf-admin-btn-danger"
+                onClick={() => supprimerCompte(o.id, o.identifiant)}
+              >
+                Supprimer
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       <form onSubmit={creer} className="hf-admin-card" style={{ marginBottom: 28 }}>
         <h2 className="hf-admin-form-title">Nouveau compte coach</h2>
-        <div className="hf-admin-split" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+        <div
+          className="hf-admin-split"
+          style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}
+        >
           <div className="hf-admin-field">
             <label className="hf-admin-label">Coach *</label>
             <select
@@ -144,9 +280,9 @@ export default function ComptesCoachPage() {
         <button type="submit" className="hf-admin-btn" disabled={sansCompte.length === 0}>
           Créer le compte
         </button>
-        {sansCompte.length === 0 && (
+        {sansCompte.length === 0 && orphelins.length === 0 && (
           <p className="hf-admin-entity-meta" style={{ marginTop: 12 }}>
-            Tous les coachs ont déjà un compte — réinitialisez le mot de passe dans le tableau.
+            Tous les coachs ont un compte — réinitialisez le mot de passe ci-dessous.
           </p>
         )}
       </form>
@@ -192,14 +328,14 @@ export default function ComptesCoachPage() {
         <table className="hf-admin-table">
           <thead>
             <tr>
-              {["Coach", "Identifiant", "Statut", ""].map((h) => (
+              {["Coach", "Identifiant", "Statut", "Actions"].map((h) => (
                 <th key={h}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {coachs.map((c) => (
-              <tr key={c.id} style={{ cursor: "default" }}>
+              <tr key={c.id}>
                 <td style={{ fontWeight: 600 }}>
                   {c.prenom} {c.nom}
                 </td>
@@ -215,20 +351,31 @@ export default function ComptesCoachPage() {
                     </span>
                   )}
                 </td>
-                <td>
+                <td style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   {c.compte && (
-                    <button
-                      type="button"
-                      className="hf-admin-btn hf-admin-btn-sm hf-admin-btn-ghost"
-                      onClick={() => {
-                        setResetId(c.compte!.id);
-                        setResetPassword("");
-                        setErreur("");
-                        setMessage("");
-                      }}
-                    >
-                      Nouveau mot de passe
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        className="hf-admin-btn hf-admin-btn-sm hf-admin-btn-ghost"
+                        onClick={() => {
+                          setResetId(c.compte!.id);
+                          setResetPassword("");
+                          setErreur("");
+                          setMessage("");
+                        }}
+                      >
+                        Mot de passe
+                      </button>
+                      <button
+                        type="button"
+                        className="hf-admin-btn hf-admin-btn-sm hf-admin-btn-danger"
+                        onClick={() =>
+                          supprimerCompte(c.compte!.id, c.compte!.identifiant)
+                        }
+                      >
+                        Supprimer
+                      </button>
+                    </>
                   )}
                 </td>
               </tr>

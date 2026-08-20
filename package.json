@@ -11,7 +11,11 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:seed-finance": "tsx prisma/seed-finance.ts",
     "db:backfill-seances": "tsx prisma/backfill-seances.ts",
+    "db:backup": "node scripts/backup-site.mjs",
+    "db:relink-coaches": "tsx scripts/relink-coach-accounts.ts",
     "db:restore-backup": "node scripts/restore-from-backup.mjs",
+    "db:clear-demo": "node scripts/clear-demo-club.mjs",
+    "db:recover-site": "node scripts/restore-from-backup.mjs && node scripts/clear-demo-club.mjs",
     "db:reset-auth": "tsx scripts/reset-auth.ts",
     "db:push": "prisma db push",
     "db:generate": "prisma generate"
