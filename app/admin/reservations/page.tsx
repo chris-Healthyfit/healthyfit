@@ -61,6 +61,8 @@ export default function AdminReservations() {
   const [emailConfig, setEmailConfig] = useState<{
     hasApiKey: boolean;
     from: string;
+    configuredFrom?: string;
+    usesTestDomain?: boolean;
     adminEmail: string;
     environment: string;
   } | null>(null);
@@ -219,6 +221,13 @@ export default function AdminReservations() {
             {" · "}
             Expéditeur : <strong>{emailConfig.from}</strong>
           </p>
+          {emailConfig.usesTestDomain && (
+            <p style={{ color: "#fbbf24", marginBottom: 12 }}>
+              Vercel utilise encore <code>onboarding@resend.dev</code> — les emails
+              clients sont bloqués. Corrigez <code>EMAIL_FROM</code> sur Vercel ou
+              redeployez la dernière version du site.
+            </p>
+          )}
           {!emailConfig.hasApiKey && (
             <p style={{ color: "#f87171", marginBottom: 12 }}>
               Ajoutez <code>RESEND_API_KEY</code> sur Vercel (Settings → Environment

@@ -22,8 +22,24 @@ type ReservationEmailData = {
 
 const GOLD = "#d4af37";
 const ADMIN_EMAIL = process.env.HEALTHYFIT_ADMIN_EMAIL ?? "contact@healthyfit.be";
-const FROM_EMAIL =
-  process.env.EMAIL_FROM ?? "HealthyFit <noreply@healthyfit.be>";
+const PRODUCTION_FROM = "HealthyFit <noreply@healthyfit.be>";
+
+function resolveFromEmail() {
+  const configured =
+    process.env.EMAIL_FROM?.trim() || PRODUCTION_FROM;
+
+  // resend.dev = domaine test Resend : envoi client impossible (403)
+  if (configured.includes("resend.dev")) {
+    console.warn(
+      "[Email] EMAIL_FROM utilise resend.dev — bascule sur noreply@healthyfit.be"
+    );
+    return PRODUCTION_FROM;
+  }
+
+  return configured;
+}
+
+const FROM_EMAIL = resolveFromEmail();
 
 function ligne(label: string, value: string | null | undefined) {
   if (!value) return "";
@@ -200,11 +216,15 @@ export async function envoyerEmailsReservation(data: ReservationEmailData) {
 
 export function getEmailConfigStatus() {
   const apiKey = process.env.RESEND_API_KEY?.trim();
+  const configuredFrom = process.env.EMAIL_FROM?.trim() || PRODUCTION_FROM;
+  const usesTestDomain = configuredFrom.includes("resend.dev");
 
   return {
     hasApiKey: Boolean(apiKey),
     apiKeyPrefix: apiKey ? `${apiKey.slice(0, 8)}…` : null,
     from: FROM_EMAIL,
+    configuredFrom,
+    usesTestDomain,
     adminEmail: ADMIN_EMAIL,
     environment: process.env.VERCEL_ENV ?? process.env.NODE_ENV ?? "unknown",
   };
