@@ -186,11 +186,14 @@ export async function envoyerEmailsReservation(data: ReservationEmailData) {
   ]);
 
   const ok = clientResult.ok && adminResult.ok;
+  const missingApiKey =
+    (!clientResult.ok && clientResult.skipped) ||
+    (!adminResult.ok && adminResult.skipped);
 
   return {
     ok,
     client: clientResult,
     admin: adminResult,
-    missingApiKey: clientResult.skipped || adminResult.skipped,
+    missingApiKey,
   };
 }
