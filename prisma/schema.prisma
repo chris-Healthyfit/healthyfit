@@ -3,13 +3,161 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum ReservationType {
+  SEANCE
+  BILAN
+}
+
+enum ReservationStatut {
+  NEW
+  CONTACTED
+  APPOINTMENT_SET
+  CLIENT
+  CLOSED
+}
+
+enum Disponibilite {
+  MATIN
+  MIDI
+  APRES_MIDI
+  SOIR
+  PEU_IMPORTE
+}
+
+enum ContactPreference {
+  TELEPHONE
+  SMS
+  EMAIL
+}
+
+enum SourceConnaissance {
+  FACEBOOK
+  INSTAGRAM
+  GOOGLE
+  PROCHE
+  PASSAGE_CLUB
+  AUTRE
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  ADMIN
+  COACH
+}
+
+enum AuditAction {
+  LOGIN
+  LOGOUT
+  CREATE
+  UPDATE
+  DELETE
+}
+
+enum AbonnementType {
+  SEANCE
+  VIP
+  CARTE_10
+}
+
+enum PresenceMode {
+  SEANCE
+  VIP
+  CARTE_10
+  OFFERTE
+  EXCEPTION
+}
+
+enum MotifOffert {
+  CADEAU
+  COACH
+  ANNIVERSAIRE
+  GESTE_COMMERCIAL
+  AUTRE
+}
+
+enum ScoreProgression {
+  EXCELLENT
+  BON
+  A_RELANCER
+  PRIORITAIRE
+}
+
+enum TarifCategorie {
+  SPORT
+  NUTRITION
+  SKIN
+  BILAN
+}
+
+enum ChargeFrequence {
+  HEBDOMADAIRE
+  MENSUELLE
+  TRIMESTRIELLE
+  SEMESTRIELLE
+  ANNUELLE
+}
+
+enum EntryType {
+  PRESENCE_RECETTE
+  PRESENCE_COUT_FIT
+  VENTE_CARTE
+  CARTE_COUT_RESERVE
+  CARTE_COUT_SEANCE
+  ACHAT
+  CHARGE
+  BILAN_COUT
+  VENTE_NUTRITION
+  VENTE_SKIN
+}
+
+enum CarteType {
+  CLASSIQUE
+  VIP
+}
+
+enum VenteType {
+  NUTRITION
+  SKIN
+}
+
+model Admin {
+  id           Int       @id @default(autoincrement())
+  prenom       String
+  nom          String
+  identifiant  String    @unique
+  passwordHash String
+  role         AdminRole @default(ADMIN)
+  actif        Boolean   @default(true)
+  coachId      Int?      @unique
+  coach        Coach?    @relation(fields: [coachId], references: [id], onDelete: SetNull)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  auditLogs  AuditLog[]
+  presences  Presence[]
+}
+
+model AuditLog {
+  id        Int         @id @default(autoincrement())
+  adminId   Int?
+  admin     Admin?      @relation(fields: [adminId], references: [id], onDelete: SetNull)
+  action    AuditAction
+  entity    String?
+  entityId  Int?
+  details   String?
+  ip        String?
+  userAgent String?
+  createdAt DateTime    @default(now())
 }
 
 model Seance {
   id          Int      @id @default(autoincrement())
-   horaire     String   @default("")
+  horaire     String   @default("")
   titre       String
   description String
   duree       String
@@ -17,7 +165,10 @@ model Seance {
   prix        String?
   image       String
   createdAt   DateTime @default(now())
+
+  reservations Reservation[]
 }
+
 model Coach {
   id          Int      @id @default(autoincrement())
   prenom      String
@@ -26,10 +177,257 @@ model Coach {
   facebook    String
   description String
   image       String
-ordre       Int      @default(0)
-
+  ordre       Int      @default(0)
   createdAt   DateTime @default(now())
+
+  reservations Reservation[]
+  compte       Admin?
+  membresClub  ClubMember[]
+  presences    Presence[]
+  seancesClub  SeanceClub[]
 }
+
+model ClubMember {
+  id                    Int            @id @default(autoincrement())
+  prenom                String
+  nom                   String?
+  telephone             String?
+  email                 String?
+  facebook              String?
+  estClient             Boolean        @default(true)
+  actif                 Boolean        @default(true)
+  estVip                Boolean        @default(false)
+  aNutrition            Boolean        @default(false)
+  abonnementType        AbonnementType @default(SEANCE)
+  seancesCarteRestantes Int?
+  objectif              String?
+  transformation        String?
+  photoAvant            String?
+  photoApres            String?
+  nutritionProgramme    String?
+  nutritionProduits     String?
+  nutritionNotes        String?
+  scoreProgression      ScoreProgression?
+  coachReferentId       Int
+  coachReferent         Coach          @relation(fields: [coachReferentId], references: [id])
+  notes                 String?
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+
+  presences Presence[]
+  bilans    Bilan[]
+  cartes    CarteClub[]
+}
+
+model CarteClub {
+  id                      Int       @id @default(autoincrement())
+  memberId                Int
+  member                  ClubMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  type                    CarteType
+  seancesTotal            Int       @default(11)
+  seancesRestantes        Int
+  montantVenteCentimes    Int
+  coutFitUnitaireCentimes Int
+  coutFitReserveCentimes  Int
+  actif                   Boolean   @default(true)
+  dateVente               DateTime  @default(now())
+  createdAt               DateTime  @default(now())
+
+  @@index([memberId])
+  @@index([actif])
+}
+
+model ClubTarif {
+  id              Int            @id @default(autoincrement())
+  code            String         @unique
+  label           String
+  montantCentimes Int
+  seancesIncluses Int?
+  categorie       TarifCategorie @default(SPORT)
+  actif           Boolean        @default(true)
+  ordre           Int            @default(0)
+  updatedAt       DateTime       @updatedAt
+}
+
+model SeanceClub {
+  id        Int        @id @default(autoincrement())
+  date      DateTime
+  horaire   String
+  label     String?
+  coachId   Int
+  coach     Coach      @relation(fields: [coachId], references: [id])
+  presences Presence[]
+  createdAt DateTime   @default(now())
+
+  @@unique([date, horaire])
+  @@index([date])
+}
+
+model Presence {
+  id              Int           @id @default(autoincrement())
+  memberId        Int
+  member          ClubMember    @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  coachId         Int
+  coach           Coach         @relation(fields: [coachId], references: [id])
+  seanceClubId    Int?
+  seanceClub      SeanceClub?   @relation(fields: [seanceClubId], references: [id], onDelete: SetNull)
+  enregistreParId Int?
+  enregistrePar   Admin?        @relation(fields: [enregistreParId], references: [id], onDelete: SetNull)
+  date            DateTime      @default(now())
+  mode            PresenceMode
+  montantCentimes Int           @default(0)
+  coutFitCentimes Int           @default(0)
+  beneficeCentimes Int          @default(0)
+  tarifCode       String?
+  isException     Boolean       @default(false)
+  motifOffert     MotifOffert?
+  motifAutre      String?
+  notes           String?
+  createdAt       DateTime      @default(now())
+
+  @@index([date])
+  @@index([memberId])
+  @@index([coachId])
+  @@index([seanceClubId])
+}
+
+model Bilan {
+  id                Int       @id @default(autoincrement())
+  memberId          Int
+  member            ClubMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  date              DateTime  @default(now())
+  photoAvant        String?
+  photoApres        String?
+  poids             Float?
+  taille            Float?
+  tourTaille        Float?
+  tourHanches       Float?
+  tourPoitrine      Float?
+  bras              Float?
+  cuisse            Float?
+  mollet            Float?
+  masseGrasse       Float?
+  masseMusculaire   Float?
+  graisseViscerale  Int?
+  eauCorporelle     Float?
+  ageMetabolique    Int?
+  metabolismeBase   Int?
+  checklistComplete Boolean   @default(false)
+  coutCentimes      Int       @default(0)
+  notes             String?
+  createdAt         DateTime  @default(now())
+
+  @@index([memberId])
+  @@index([date])
+}
+
+model StockItem {
+  id                  Int      @id @default(autoincrement())
+  nom                 String
+  categorie           String   @default("Général")
+  quantite            Int      @default(0)
+  seuilAlerte         Int      @default(5)
+  unite               String   @default("unité")
+  prixAchatCentimes   Int?
+  nombrePortions      Int      @default(1)
+  coutPortionCentimes Int      @default(0)
+  deduitParPresence   Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  fitCostItems   FitCostItem[]
+  purchaseLines  StockPurchaseLine[]
+  stockMovements StockMovement[]
+}
+
+model FitCostItem {
+  id                  Int        @id @default(autoincrement())
+  nom                 String
+  section             String     @default("FIT")
+  stockItemId         Int?
+  stockItem           StockItem? @relation(fields: [stockItemId], references: [id], onDelete: SetNull)
+  coutPortionCentimes Int        @default(0)
+  portionsParSeance   Float      @default(1)
+  actif               Boolean    @default(true)
+  ordre               Int        @default(0)
+}
+
+model FinanceConfig {
+  id                Int      @id @default(1)
+  coutBilanCentimes Int      @default(350)
+  updatedAt         DateTime @updatedAt
+}
+
+model Charge {
+  id                Int             @id @default(autoincrement())
+  nom               String
+  categorie         String          @default("Général")
+  montantCentimes   Int
+  frequence         ChargeFrequence @default(MENSUELLE)
+  prochaineEcheance DateTime
+  actif             Boolean         @default(true)
+  createdAt         DateTime        @default(now())
+}
+
+model StockPurchase {
+  id            Int                 @id @default(autoincrement())
+  date          DateTime            @default(now())
+  totalCentimes Int
+  notes         String?
+  createdAt     DateTime            @default(now())
+  lines         StockPurchaseLine[]
+}
+
+model StockPurchaseLine {
+  id                   Int           @id @default(autoincrement())
+  purchaseId           Int
+  purchase             StockPurchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  stockItemId          Int?
+  stockItem            StockItem?    @relation(fields: [stockItemId], references: [id], onDelete: SetNull)
+  quantite             Int
+  prixUnitaireCentimes Int
+}
+
+model StockMovement {
+  id          Int       @id @default(autoincrement())
+  stockItemId Int
+  stockItem   StockItem @relation(fields: [stockItemId], references: [id], onDelete: Cascade)
+  delta       Int
+  libelle     String
+  date        DateTime  @default(now())
+}
+
+model Vente {
+  id              Int       @id @default(autoincrement())
+  date            DateTime  @default(now())
+  type            VenteType
+  libelle         String
+  montantCentimes Int
+  memberId        Int?
+  createdAt       DateTime  @default(now())
+
+  @@index([date])
+}
+
+model AccountingEntry {
+  id               Int       @id @default(autoincrement())
+  date             DateTime  @default(now())
+  type             EntryType
+  categorie        String
+  libelle          String
+  recetteCentimes  Int       @default(0)
+  depenseCentimes  Int       @default(0)
+  coutCentimes     Int       @default(0)
+  beneficeCentimes Int       @default(0)
+  referenceType    String?
+  referenceId      Int?
+  createdAt        DateTime  @default(now())
+
+  @@index([date])
+  @@index([type])
+  @@index([categorie])
+}
+
 model Club {
   id          Int      @id @default(autoincrement())
   titre       String
@@ -41,50 +439,86 @@ model Club {
   bouton      String
   createdAt   DateTime @default(now())
 }
+
 model Nutrition {
   id              Int      @id @default(autoincrement())
-
   titre           String
   sousTitre       String
-
   importance      String
   accompagnement  String
-
   imageHero       String
   imageImportance String
   imageCoach      String
-
   bouton          String
-
   createdAt       DateTime @default(now())
-  }
+}
+
 model Temoignage {
-  id         Int      @id @default(autoincrement())
-  prenom     String
-  texte      String
-  image      String
-  ordre      Int      @default(0)
-  actif      Boolean  @default(true)
-  createdAt  DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  prenom    String
+  texte     String
+  image     String
+  ordre     Int      @default(0)
+  actif     Boolean  @default(true)
+  createdAt DateTime @default(now())
 }
+
 model Galerie {
-  id         Int      @id @default(autoincrement())
-  titre      String
-  categorie  String
-  image      String
-  ordre      Int      @default(0)
-  actif      Boolean  @default(true)
-  createdAt  DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  titre     String
+  categorie String
+  image     String
+  ordre     Int      @default(0)
+  actif     Boolean  @default(true)
+  createdAt DateTime @default(now())
 }
+
 model Contact {
-  id             Int      @id @default(autoincrement())
-  nom            String
-  adresse        String
-  telephone      String
-  email          String
-  horaires       String
-  facebook       String
-  googleMaps     String
-  introduction   String
-  createdAt      DateTime @default(now())
+  id           Int      @id @default(autoincrement())
+  nom          String
+  adresse      String
+  telephone    String
+  email        String
+  horaires     String
+  facebook     String
+  googleMaps   String
+  introduction String
+  createdAt    DateTime @default(now())
+}
+
+model Reservation {
+  id Int @id @default(autoincrement())
+
+  nom       String
+  prenom    String
+  telephone String
+  email     String
+
+  type ReservationType
+
+  objectifs     String[]
+  autreObjectif String?
+
+  seanceId Int?
+  seance   Seance? @relation(fields: [seanceId], references: [id], onDelete: SetNull)
+
+  coachId Int?
+  coach   Coach? @relation(fields: [coachId], references: [id], onDelete: SetNull)
+
+  jourDisponibilite String?
+  disponibilite     Disponibilite?
+
+  contactPreference ContactPreference
+
+  source SourceConnaissance
+
+  recommandation String?
+  autreSource    String?
+
+  message String?
+
+  statut ReservationStatut @default(NEW)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

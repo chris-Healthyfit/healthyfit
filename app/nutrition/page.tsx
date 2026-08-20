@@ -7,398 +7,121 @@ export default async function Nutrition() {
 
   if (!nutrition) {
     return (
-      <main
-        style={{
-          minHeight: "100vh",
-          background: "#0b0b0b",
-          color: "white",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          fontSize: "24px",
-        }}
-      >
-        La page Nutrition n'est pas encore configurée.
+      <main className="hf-page-plain" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <p style={{ fontSize: 24 }}>La page Nutrition n&apos;est pas encore configurée.</p>
       </main>
     );
   }
 
+  const methode = [
+    {
+      numero: "01",
+      titre: "Votre bilan",
+      texte: "Nous prenons le temps de comprendre votre situation, vos habitudes et vos objectifs.",
+    },
+    {
+      numero: "02",
+      titre: "Vos objectifs",
+      texte: "Nous définissons ensemble des objectifs réalistes et adaptés à votre mode de vie.",
+    },
+    {
+      numero: "03",
+      titre: "Votre accompagnement",
+      texte: "Vous recevez des conseils simples et personnalisés pour progresser à votre rythme.",
+    },
+    {
+      numero: "04",
+      titre: "Votre suivi",
+      texte: "Nous restons présents pour vous accompagner, ajuster et répondre à vos questions.",
+    },
+  ];
+
   return (
-    <main
-      style={{
-        background: "#0b0b0b",
-        color: "white",
-        minHeight: "100vh",
-      }}
-    >
+    <main className="hf-page-plain">
       <Navbar />
 
-      {/* HERO */}
-
       <section
-        style={{
-          position: "relative",
-          minHeight: "100vh",
-          backgroundImage: `url(${nutrition.imageHero})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          paddingTop: "90px",
-        }}
+        className="hf-hero-full hf-hero-full-cover"
+        style={{ backgroundImage: `url(${nutrition.imageHero})` }}
       >
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background:
-              "linear-gradient(to bottom,rgba(0,0,0,.45),rgba(0,0,0,.82))",
-          }}
-        />
-
-        <div
-          style={{
-            position: "relative",
-            zIndex: 2,
-            maxWidth: "900px",
-            width: "100%",
-            textAlign: "center",
-            padding: "20px",
-          }}
-        >
-          <h1
-            style={{
-              color: "#d4af37",
-              fontSize: "clamp(40px,10vw,90px)",
-              fontWeight: 900,
-              marginBottom: "20px",
-              lineHeight: 1.05,
-            }}
-          >
-            {nutrition.titre}
-          </h1>
-
-          <p
-            style={{
-              fontSize: "clamp(18px,5vw,22px)",
-              lineHeight: 1.8,
-              marginBottom: "35px",
-            }}
-          >
+        <div className="hf-hero-overlay" />
+        <div className="hf-hero-content">
+          <h1 className="hf-title-plain">{nutrition.titre}</h1>
+          <p className="hf-subtitle" style={{ color: "#fff", marginBottom: 35 }}>
             {nutrition.sousTitre}
           </p>
-
-          <a
-            href="/contact"
-            style={{
-              background: "#d4af37",
-              color: "#000",
-              textDecoration: "none",
-              padding: "18px 40px",
-              borderRadius: "12px",
-              fontWeight: "bold",
-              fontSize: "20px",
-            }}
-          >
+          <a href="/contact" className="hf-btn-gold">
             {nutrition.bouton}
           </a>
         </div>
       </section>
-      {/* IMPORTANCE DE LA NUTRITION */}
 
-      <section
-        style={{
-          maxWidth: "1300px",
-          margin: "0 auto",
-          padding: "70px 20px",
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))",
-          gap: "40px",
-          alignItems: "center",
-        }}
-      >
-        <div>
+      <section className="hf-section">
+        <div className="hf-grid-2" style={{ maxWidth: 1300, margin: "0 auto" }}>
           {nutrition.imageImportance && (
             <img
               src={nutrition.imageImportance}
               alt="Pourquoi la nutrition est importante"
-              style={{
-                width: "100%",
-                borderRadius: "24px",
-                objectFit: "cover",
-                boxShadow: "0 25px 60px rgba(0,0,0,.45)",
-                border: "2px solid rgba(212,175,55,.20)",
-              }}
+              className="hf-img"
             />
           )}
-        </div>
-
-        <div>
-          <h2
-            style={{
-              color: "#d4af37",
-              fontSize: "clamp(34px,8vw,48px)",
-              fontWeight: 900,
-              marginBottom: "25px",
-              textAlign: "center",
-            }}
-          >
-            Pourquoi la nutrition est-elle si importante ?
-          </h2>
-
-          <p
-            style={{
-              color: "#ececec",
-              fontSize: "clamp(17px,4.5vw,20px)",
-              lineHeight: 1.9,
-              whiteSpace: "pre-line",
-              textAlign: "justify",
-            }}
-          >
-            {nutrition.importance}
-          </p>
+          <div>
+            <h2 className="hf-title-md">
+              Pourquoi la nutrition est-elle si importante ?
+            </h2>
+            <p className="hf-text hf-text-justify">{nutrition.importance}</p>
+          </div>
         </div>
       </section>
 
-      {/* ACCOMPAGNEMENT */}
-
-      <section
-        style={{
-          background: "#111111",
-          padding: "70px 20px",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: "1300px",
-            margin: "0 auto",
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))",
-            gap: "40px",
-            alignItems: "center",
-          }}
-        >
+      <section className="hf-section-dark">
+        <div className="hf-grid-2" style={{ maxWidth: 1300, margin: "0 auto" }}>
           <div>
-            <h2
-              style={{
-                color: "#d4af37",
-                fontSize: "clamp(34px,8vw,48px)",
-                fontWeight: 900,
-                marginBottom: "25px",
-                textAlign: "center",
-              }}
-            >
-              Comment HealthyFit vous accompagne
-            </h2>
-
-            <p
-              style={{
-                color: "#ececec",
-                fontSize: "clamp(17px,4.5vw,20px)",
-                lineHeight: 1.9,
-                whiteSpace: "pre-line",
-                textAlign: "justify",
-              }}
-            >
-              {nutrition.accompagnement}
-            </p>
+            <h2 className="hf-title-md">Comment HealthyFit vous accompagne</h2>
+            <p className="hf-text hf-text-justify">{nutrition.accompagnement}</p>
           </div>
-
-          <div>
-            {nutrition.imageCoach && (
-              <img
-                src={nutrition.imageCoach}
-                alt="Accompagnement"
-                style={{
-                  width: "100%",
-                  borderRadius: "24px",
-                  objectFit: "cover",
-                  boxShadow: "0 25px 60px rgba(0,0,0,.45)",
-                  border: "2px solid rgba(212,175,55,.20)",
-                }}
-              />
-            )}
-          </div>
+          {nutrition.imageCoach && (
+            <img src={nutrition.imageCoach} alt="Accompagnement" className="hf-img" />
+          )}
         </div>
-      </section>. 
-       {/* NOTRE MÉTHODE */}
+      </section>
 
-      <section
-        style={{
-          maxWidth: "1200px",
-          margin: "0 auto",
-          padding: "80px 20px",
-          textAlign: "center",
-        }}
-      >
-        <h2
-          style={{
-            color: "#d4af37",
-            fontSize: "clamp(36px,8vw,52px)",
-            fontWeight: 900,
-            marginBottom: "20px",
-          }}
-        >
-          Notre méthode
-        </h2>
-
-        <p
-          style={{
-            color: "#d5d5d5",
-            fontSize: "clamp(18px,4.5vw,20px)",
-            marginBottom: "50px",
-            lineHeight: 1.8,
-          }}
-        >
+      <section className="hf-section" style={{ textAlign: "center" }}>
+        <h2 className="hf-cta-title">Notre méthode</h2>
+        <p className="hf-cta-text" style={{ marginBottom: 50 }}>
           Un accompagnement simple, personnalisé et progressif pour vous aider
           à atteindre vos objectifs durablement.
         </p>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))",
-            gap: "25px",
-          }}
-        >
-          {[
-            {
-              numero: "01",
-              titre: "Votre bilan",
-              texte:
-                "Nous prenons le temps de comprendre votre situation, vos habitudes et vos objectifs.",
-            },
-            {
-              numero: "02",
-              titre: "Vos objectifs",
-              texte:
-                "Nous définissons ensemble des objectifs réalistes et adaptés à votre mode de vie.",
-            },
-            {
-              numero: "03",
-              titre: "Votre accompagnement",
-              texte:
-                "Vous recevez des conseils simples et personnalisés pour progresser à votre rythme.",
-            },
-            {
-              numero: "04",
-              titre: "Votre suivi",
-              texte:
-                "Nous restons présents pour vous accompagner, ajuster et répondre à vos questions.",
-            },
-          ].map((item) => (
-            <div
-              key={item.numero}
-              style={{
-                background: "#171717",
-                padding: "35px 25px",
-                borderRadius: "22px",
-                border: "1px solid rgba(212,175,55,.20)",
-                boxShadow: "0 15px 40px rgba(0,0,0,.35)",
-              }}
-            >
-              <div
-                style={{
-                  width: "65px",
-                  height: "65px",
-                  borderRadius: "50%",
-                  background: "#d4af37",
-                  color: "#000",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "24px",
-                  fontWeight: 900,
-                  margin: "0 auto 20px",
-                }}
-              >
-                {item.numero}
-              </div>
-
-              <h3
-                style={{
-                  color: "#d4af37",
-                  fontSize: "26px",
-                  marginBottom: "18px",
-                }}
-              >
-                {item.titre}
-              </h3>
-
-              <p
-                style={{
-                  color: "#dddddd",
-                  lineHeight: 1.8,
-                  fontSize: "17px",
-                }}
-              >
+        <div className="hf-grid-3 hf-stagger" style={{ maxWidth: 1200, margin: "0 auto" }}>
+          {methode.map((item) => (
+            <article key={item.numero} className="hf-card">
+              <div className="hf-badge-num">{item.numero}</div>
+              <h3 className="hf-card-title-sm">{item.titre}</h3>
+              <p className="hf-text" style={{ fontSize: 17, color: "#ddd" }}>
                 {item.texte}
               </p>
-            </div>
+            </article>
           ))}
         </div>
       </section>
-      {/* APPEL À L'ACTION */}
 
-      <section
-        style={{
-          background: "linear-gradient(180deg,#161616,#0b0b0b)",
-          padding: "80px 20px",
-          textAlign: "center",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: "900px",
-            margin: "0 auto",
-          }}
-        >
-          <h2
-            style={{
-              color: "#d4af37",
-              fontSize: "clamp(36px,8vw,54px)",
-              fontWeight: 900,
-              marginBottom: "25px",
-              lineHeight: 1.15,
-            }}
-          >
+      <section className="hf-section-gradient">
+        <div className="hf-cta">
+          <h2 className="hf-cta-title">
             Prêt à reprendre votre alimentation en main ?
           </h2>
-
-          <p
-            style={{
-              color: "#e4e4e4",
-              fontSize: "clamp(18px,4.5vw,21px)",
-              lineHeight: 1.9,
-              marginBottom: "40px",
-            }}
-          >
+          <p className="hf-cta-text">
             Chaque changement commence par une première discussion.
             <br />
             Venez réaliser votre bilan nutritionnel et découvrons ensemble
             comment atteindre vos objectifs grâce à un accompagnement
             personnalisé.
           </p>
-
-          <a
-            href="/contact"
-            style={{
-              display: "inline-block",
-              background: "#d4af37",
-              color: "#000",
-              textDecoration: "none",
-              padding: "18px 45px",
-              borderRadius: "14px",
-              fontWeight: 800,
-              fontSize: "20px",
-              boxShadow: "0 10px 25px rgba(212,175,55,.35)",
-            }}
-          >
+          <a href="/contact" className="hf-btn-gold">
             {nutrition.bouton}
           </a>
         </div>
       </section>
     </main>
   );
-}                
+}

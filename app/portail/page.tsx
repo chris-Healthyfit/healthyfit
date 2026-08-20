@@ -1,0 +1,101 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+
+export default function PortailAdmin() {
+  const [identifiant, setIdentifiant] = useState("");
+  const [password, setPassword] = useState("");
+  const [erreur, setErreur] = useState("");
+  const router = useRouter();
+
+  async function login() {
+    setErreur("");
+
+    const res = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ identifiant, password, context: "admin" }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (res.ok && data.redirect) {
+      router.push(data.redirect);
+      router.refresh();
+    } else {
+      setErreur(
+        data.error ??
+          (res.status === 401
+            ? "Identifiant ou mot de passe incorrect."
+            : "Connexion impossible. Réessaie ou redémarre le serveur.")
+      );
+    }
+  }
+
+  return (
+    <main className="hf-login-page">
+      <div className="hf-login-card">
+        <h1 className="hf-login-title">🔒 Administration HealthyFit</h1>
+
+        <input
+          type="text"
+          placeholder="Identifiant (ex: chris)"
+          value={identifiant}
+          onChange={(e) => setIdentifiant(e.target.value)}
+          className="hf-input"
+          autoComplete="username"
+          style={{ marginBottom: 12 }}
+        />
+
+        <input
+          type="password"
+          placeholder="Mot de passe"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && login()}
+          className="hf-input"
+          autoComplete="current-password"
+        />
+
+        <button
+          type="button"
+          onClick={login}
+          className="hf-btn-gold"
+          style={{ width: "100%", marginTop: 16 }}
+        >
+          Se connecter
+        </button>
+
+        {erreur && (
+          <p
+            style={{
+              color: "#f88",
+              marginTop: 16,
+              fontSize: 14,
+              lineHeight: 1.5,
+              textAlign: "center",
+            }}
+          >
+            {erreur}
+          </p>
+        )}
+
+        <Link
+          href="/"
+          style={{
+            display: "block",
+            marginTop: 20,
+            textAlign: "center",
+            color: "#888",
+            fontSize: 14,
+            textDecoration: "none",
+          }}
+        >
+          ← Retour au site
+        </Link>
+      </div>
+    </main>
+  );
+}

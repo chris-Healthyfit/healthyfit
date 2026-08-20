@@ -220,13 +220,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
-
-main()
-  .catch((error) => {
-    console.error("");
-    console.error("❌ Erreur durant la migration");
-    console.error(error);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });

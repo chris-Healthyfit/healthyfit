@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { auditMutation } from "@/lib/api-audit";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
@@ -34,6 +35,13 @@ export async function POST(req: Request) {
         ordre: body.ordre ?? 0,
         actif: body.actif ?? true,
       },
+    });
+
+    await auditMutation(req, {
+      action: "CREATE",
+      entity: "temoignage",
+      entityId: temoignage.id,
+      details: temoignage.prenom,
     });
 
     return NextResponse.json(temoignage);

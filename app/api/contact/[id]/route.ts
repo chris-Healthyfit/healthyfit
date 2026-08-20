@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import { auditMutation } from "@/lib/api-audit";
 
 const prisma = new PrismaClient();
 
@@ -25,6 +26,13 @@ export async function PUT(
       googleMaps: body.googleMaps,
       introduction: body.introduction,
     },
+  });
+
+  await auditMutation(req, {
+    action: "UPDATE",
+    entity: "contact",
+    entityId: contact.id,
+    details: contact.nom,
   });
 
   return NextResponse.json(contact);

@@ -1,21 +1,83 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { ADMIN_LOGIN_PATH } from "@/lib/admin-config";
 
-const menu = [
-  { titre: "🏠 Tableau de bord", lien: "/admin" },
-  { titre: "🏋️ Séances", lien: "/admin/seances" },
-  { titre: "👥 Coachs", lien: "/admin/coachs" },
-  { titre: "🏢 Le Club", lien: "/admin/club" },
-  { titre: "🥗 Nutrition", lien: "/admin/nutrition" },
-  { titre: "🖼 Galerie", lien: "/admin/galerie" },
-  { titre: "💬 Témoignages", lien: "/admin/temoignages" },
-  { titre: "📞 Contact", lien: "/admin/contact" },
-  { titre: "📦 Stock", lien: "#" },
-  { titre: "👤 Présences", lien: "#" },
+type NavItem = {
+  icon: string;
+  label: string;
+  href: string;
+  disabled?: boolean;
+};
+
+type NavSection = {
+  title: string;
+  items: NavItem[];
+  superOnly?: boolean;
+};
+
+const navSections: NavSection[] = [
+  {
+    title: "Principal",
+    items: [{ icon: "◆", label: "Tableau de bord", href: "/admin" }],
+  },
+  {
+    title: "Contenu",
+    items: [
+      { icon: "🏋️", label: "Séances", href: "/admin/seances" },
+      { icon: "👥", label: "Coachs", href: "/admin/coachs" },
+      { icon: "🏢", label: "Le Club", href: "/admin/club" },
+      { icon: "🥗", label: "Nutrition", href: "/admin/nutrition" },
+      { icon: "🖼", label: "Galerie", href: "/admin/galerie" },
+      { icon: "💬", label: "Témoignages", href: "/admin/temoignages" },
+      { icon: "📞", label: "Contact", href: "/admin/contact" },
+    ],
+  },
+  {
+    title: "Gestion",
+    items: [
+      { icon: "📅", label: "Réservations", href: "/admin/reservations" },
+    ],
+  },
+  {
+    title: "Espace Club",
+    superOnly: true,
+    items: [
+      { icon: "◆", label: "Tableau de bord club", href: "/espace-club" },
+      { icon: "⚡", label: "Présences", href: "/espace-club/presences" },
+      { icon: "👥", label: "Clients", href: "/espace-club/clients" },
+      { icon: "📊", label: "Centre Financier", href: "/espace-club/finances" },
+      { icon: "📦", label: "Stock", href: "/espace-club/stock" },
+      { icon: "🔑", label: "Comptes coachs", href: "/admin/comptes-coach" },
+    ],
+  },
+  {
+    title: "Système",
+    superOnly: true,
+    items: [
+      { icon: "🔑", label: "Administrateurs", href: "/admin/admins" },
+      { icon: "📋", label: "Historique", href: "/admin/historique" },
+    ],
+  },
 ];
+
+const pageTitles: Record<string, string> = {
+  "/admin": "Tableau de bord",
+  "/admin/seances": "Séances",
+  "/admin/coachs": "Coachs",
+  "/admin/club": "Le Club",
+  "/admin/nutrition": "Nutrition",
+  "/admin/galerie": "Galerie",
+  "/admin/temoignages": "Témoignages",
+  "/admin/contact": "Contact",
+  "/admin/reservations": "Réservations",
+  "/admin/admins": "Administrateurs",
+  "/admin/comptes-coach": "Comptes coachs",
+  "/admin/historique": "Historique",
+};
 
 export default function AdminLayout({
   children,
@@ -26,220 +88,150 @@ export default function AdminLayout({
 
   const [mobile, setMobile] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [utilisateur, setUtilisateur] = useState("");
+  const [initiales, setInitiales] = useState("HF");
+  const [superAdmin, setSuperAdmin] = useState(false);
 
   useEffect(() => {
-    const resize = () => {
-      setMobile(window.innerWidth <= 900);
-    };
+    fetch("/api/me")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data) {
+          setUtilisateur(`${data.prenom} ${data.nom}`);
+          setInitiales(
+            `${data.prenom?.[0] ?? ""}${data.nom?.[0] ?? ""}`.toUpperCase()
+          );
+          setSuperAdmin(data.isSuperAdmin === true);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
+  useEffect(() => {
+    const resize = () => setMobile(window.innerWidth <= 900);
     resize();
     window.addEventListener("resize", resize);
-
     return () => window.removeEventListener("resize", resize);
   }, []);
 
-  async function logout() {
-    await fetch("/api/logout", {
-      method: "POST",
-    });
+  const sections = useMemo(
+    () =>
+      navSections.filter((s) => !s.superOnly || superAdmin),
+    [superAdmin]
+  );
 
-    window.location.href = "/login";
+  const headerTitle = pageTitles[pathname] ?? "Administration";
+
+  async function logout() {
+    await fetch("/api/logout", { method: "POST" });
+    window.location.href = ADMIN_LOGIN_PATH;
+  }
+
+  function isActive(href: string) {
+    if (href === "/admin") return pathname === "/admin";
+    return pathname.startsWith(href);
   }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        background: "#0b0b0b",
-      }}
-    >
+    <div className="hf-admin-root">
       {mobile && menuOpen && (
-        <div
-          onClick={() => setMenuOpen(false)}
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,.6)",
-            zIndex: 998,
-          }}
-        />
+        <div className="hf-admin-overlay" onClick={() => setMenuOpen(false)} />
       )}
 
       {mobile && (
         <button
+          type="button"
+          className="hf-admin-mobile-toggle"
           onClick={() => setMenuOpen(true)}
-          style={{
-            position: "fixed",
-            top: 15,
-            left: 15,
-            width: 46,
-            height: 46,
-            border: "none",
-            borderRadius: 10,
-            background: "#d4af37",
-            color: "#000",
-            fontWeight: "bold",
-            fontSize: 24,
-            cursor: "pointer",
-            zIndex: 1001,
-          }}
+          aria-label="Menu"
         >
           ☰
         </button>
       )}
 
       <aside
-        style={{
-          width: 270,
-          background: "#111",
-          borderRight: "1px solid rgba(212,175,55,.15)",
-          padding: 25,
-          display: "flex",
-          flexDirection: "column",
-          position: mobile ? "fixed" : "relative",
-          top: 0,
-          left: mobile ? (menuOpen ? 0 : -280) : 0,
-          height: "100vh",
-          transition: ".3s",
-          zIndex: 999,
-          flexShrink: 0,
-        }}
+        className={`hf-admin-sidebar${mobile && menuOpen ? " open" : ""}`}
       >
-        <h1
-          style={{
-            color: "#d4af37",
-            fontSize: 28,
-            fontWeight: 900,
-            marginBottom: 35,
-          }}
-        >
-          HealthyFit CMS
-        </h1>
-
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 10,
-          }}
-        >
-                    {menu.map((item) => (
-            <Link
-              key={item.titre}
-              href={item.lien}
-              onClick={() => {
-                if (mobile) setMenuOpen(false);
-              }}
-              style={{
-                textDecoration: "none",
-                color: pathname === item.lien ? "#000" : "#fff",
-                background:
-                  pathname === item.lien
-                    ? "#d4af37"
-                    : "transparent",
-                padding: "14px 18px",
-                borderRadius: 12,
-                transition: ".25s",
-                fontWeight: 600,
-              }}
-            >
-              {item.titre}
-            </Link>
-          ))}
+        <div className="hf-admin-sidebar-logo">
+          <Image
+            src="/images/logo-2.png"
+            alt="HealthyFit"
+            width={120}
+            height={48}
+            style={{ height: "auto", width: 110 }}
+          />
+          <span>CMS</span>
         </div>
 
-        <div style={{ flex: 1 }} />
+        <nav>
+          {sections.map((section) => (
+            <div key={section.title} className="hf-admin-nav-section">
+              <div className="hf-admin-nav-label">{section.title}</div>
+              {section.items.map((item) =>
+                item.disabled ? (
+                  <span
+                    key={item.label}
+                    className="hf-admin-nav-link disabled"
+                  >
+                    <span className="hf-admin-nav-icon">{item.icon}</span>
+                    {item.label}
+                    <span style={{ fontSize: 10, marginLeft: "auto", opacity: 0.6 }}>
+                      bientôt
+                    </span>
+                  </span>
+                ) : (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => mobile && setMenuOpen(false)}
+                    className={`hf-admin-nav-link${isActive(item.href) ? " active" : ""}`}
+                  >
+                    <span className="hf-admin-nav-icon">{item.icon}</span>
+                    {item.label}
+                  </Link>
+                )
+              )}
+            </div>
+          ))}
+        </nav>
 
-        <button
-          onClick={logout}
-          style={{
-            marginTop: 20,
-            background: "#d4af37",
-            color: "#000",
-            border: "none",
-            padding: "14px",
-            borderRadius: 999,
-            cursor: "pointer",
-            fontWeight: 700,
-          }}
-        >
-          🚪 Déconnexion
-        </button>
+        <div className="hf-admin-sidebar-footer">
+          <div className="hf-admin-user-card">
+            <div className="hf-admin-user-avatar">{initiales}</div>
+            <div>
+              <div className="hf-admin-user-name">
+                {utilisateur || "Admin"}
+              </div>
+              <div className="hf-admin-user-role">
+                {superAdmin ? "Super admin" : "Administrateur"}
+              </div>
+            </div>
+          </div>
+          <button type="button" className="hf-admin-btn" style={{ width: "100%" }} onClick={logout}>
+            Déconnexion
+          </button>
+        </div>
       </aside>
 
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          marginLeft: mobile ? 0 : 0,
-        }}
-      >
-        <header
-          style={{
-            height: 75,
-            background: "#0f0f0f",
-            borderBottom: "1px solid rgba(212,175,55,.15)",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            padding: mobile ? "0 20px 0 75px" : "0 35px",
-          }}
-        >
-          <h2
-            style={{
-              margin: 0,
-              color: "#fff",
-            }}
-          >
-            Administration
-          </h2>
-             <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 15,
-            }}
-          >
-            <span
-              style={{
-                color: "#d4af37",
-                fontWeight: 600,
-                display: mobile ? "none" : "block",
-              }}
-            >
-              Administration HealthyFit
-            </span>
-
+      <div className="hf-admin-shell">
+        <header className="hf-admin-header">
+          <h2 className="hf-admin-header-title">{headerTitle}</h2>
+          <div className="hf-admin-header-actions">
+            <Link href="/" className="hf-admin-btn hf-admin-btn-ghost hf-admin-btn-sm">
+              Voir le site
+            </Link>
             <button
+              type="button"
+              className="hf-admin-btn hf-admin-btn-sm"
               onClick={logout}
-              style={{
-                background: "#d4af37",
-                color: "#000",
-                border: "none",
-                padding: "12px 22px",
-                borderRadius: 999,
-                cursor: "pointer",
-                fontWeight: 700,
-              }}
             >
-              🚪 Déconnexion
+              Déconnexion
             </button>
           </div>
         </header>
 
-        <main
-          style={{
-            flex: 1,
-            padding: mobile ? 20 : 40,
-            color: "#fff",
-            overflowY: "auto",
-          }}
-        >
-          {children}
-        </main>
+        <main className="hf-admin-main">{children}</main>
       </div>
-       </div>
+    </div>
   );
-}          
+}

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import { auditMutation } from "@/lib/api-audit";
 
 const prisma = new PrismaClient();
 
@@ -24,6 +25,13 @@ export async function PUT(
     },
   });
 
+  await auditMutation(req, {
+    action: "UPDATE",
+    entity: "galerie",
+    entityId: photo.id,
+    details: photo.titre,
+  });
+
   return NextResponse.json(photo);
 }
 
@@ -38,6 +46,12 @@ export async function DELETE(
     where: {
       id: Number(id),
     },
+  });
+
+  await auditMutation(req, {
+    action: "DELETE",
+    entity: "galerie",
+    entityId: Number(id),
   });
 
   return NextResponse.json({

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { auditMutation } from "@/lib/api-audit";
 
 type Params = {
   params: Promise<{
@@ -25,6 +26,13 @@ export async function PUT(req: Request, { params }: Params) {
       },
     });
 
+    await auditMutation(req, {
+      action: "UPDATE",
+      entity: "temoignage",
+      entityId: temoignage.id,
+      details: temoignage.prenom,
+    });
+
     return NextResponse.json(temoignage);
   } catch (error) {
     return NextResponse.json(
@@ -45,6 +53,12 @@ export async function DELETE(
       where: {
         id: Number(id),
       },
+    });
+
+    await auditMutation(req, {
+      action: "DELETE",
+      entity: "temoignage",
+      entityId: Number(id),
     });
 
     return NextResponse.json({

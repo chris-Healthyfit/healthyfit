@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { auditMutation } from "@/lib/api-audit";
 export const dynamic = "force-dynamic";
 
 // GET
@@ -25,6 +26,13 @@ export async function POST(req: Request) {
       ordre: body.ordre ?? 0,
       actif: body.actif ?? true,
     },
+  });
+
+  await auditMutation(req, {
+    action: "CREATE",
+    entity: "galerie",
+    entityId: photo.id,
+    details: photo.titre,
   });
 
   return NextResponse.json(photo);

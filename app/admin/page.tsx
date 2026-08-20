@@ -1,130 +1,183 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
+
+type Stats = {
+  coachs: number;
+  seances: number;
+  reservations: number;
+  newReservations: number;
+  temoignages: number;
+  galerie: number;
+};
 
 const modules = [
   {
     titre: "Séances",
-    description: "Gérer les séances proposées par HealthyFit.",
+    description: "Horaires, niveaux et tarifs des cours.",
     lien: "/admin/seances",
     emoji: "🏋️",
   },
   {
     titre: "Coachs",
-    description: "Ajouter, modifier ou supprimer les coachs.",
+    description: "Profils, photos et coordonnées.",
     lien: "/admin/coachs",
     emoji: "👥",
   },
   {
+    titre: "Réservations",
+    description: "Demandes reçues depuis le site.",
+    lien: "/admin/reservations",
+    emoji: "📅",
+  },
+  {
     titre: "Le Club",
-    description: "Modifier la présentation du club.",
+    description: "Présentation et philosophie.",
     lien: "/admin/club",
     emoji: "🏢",
   },
   {
     titre: "Nutrition",
-    description: "Gérer la page Nutrition.",
+    description: "Page Sport & Nutrition.",
     lien: "/admin/nutrition",
     emoji: "🥗",
   },
   {
     titre: "Témoignages",
-    description: "Ajouter, modifier ou supprimer les témoignages.",
+    description: "Avis clients du site.",
     lien: "/admin/temoignages",
     emoji: "💬",
   },
   {
     titre: "Galerie",
-    description: "Ajouter et supprimer les photos.",
+    description: "Photos du club et des séances.",
     lien: "/admin/galerie",
-    emoji: "🖼️",
+    emoji: "🖼",
   },
   {
     titre: "Contact",
-    description: "Modifier les coordonnées et les horaires.",
+    description: "Coordonnées et horaires.",
     lien: "/admin/contact",
     emoji: "📞",
   },
 ];
 
-export default function Admin() {
+const clubModules = [
+  {
+    titre: "Clients",
+    description: "Suivi clients et non-clients.",
+    lien: "/espace-club/clients",
+    emoji: "👥",
+  },
+  {
+    titre: "Stock",
+    description: "Produits et quantités.",
+    lien: "/espace-club/stock",
+    emoji: "📦",
+  },
+  {
+    titre: "Espace club",
+    description: "Tableau de bord coachs.",
+    lien: "/espace-club",
+    emoji: "🏋️",
+  },
+];
+
+export default function AdminDashboard() {
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [prenom, setPrenom] = useState("");
+  const [superAdmin, setSuperAdmin] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d) {
+          setPrenom(d.prenom);
+          setSuperAdmin(d.isSuperAdmin === true);
+        }
+      });
+
+    fetch("/api/admin/stats")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => d && setStats(d));
+  }, []);
+
   return (
     <>
-      <h1
-        style={{
-          color: "#d4af37",
-          fontSize: "clamp(34px,8vw,42px)",
-          marginBottom: 10,
-          fontWeight: 900,
-          textAlign: "center",
-        }}
-      >
-        Tableau de bord
-      </h1>
+      <div className="hf-admin-hero">
+        <h1>Bienvenue{prenom ? `, ${prenom}` : ""}</h1>
+        <p>
+          Pilotez HealthyFit depuis votre espace premium — contenu, réservations
+          et équipe en un seul endroit.
+        </p>
+      </div>
 
-      <p
-        style={{
-          color: "#9d9d9d",
-          marginBottom: 30,
-          fontSize: "clamp(16px,4vw,18px)",
-          textAlign: "center",
-          lineHeight: 1.7,
-        }}
-      >
-        Bienvenue dans l'administration HealthyFit.
-      </p>
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))",
-          gap: 20,
-        }}
-      >
-        {modules.map((module) => (
+      {stats && (
+        <div className="hf-admin-stats">
           <Link
-            key={module.titre}
-            href={module.lien}
-            style={{
-              background: "#171717",
-              border: "1px solid rgba(212,175,55,.15)",
-              borderRadius: 18,
-              padding: 22,
-              textDecoration: "none",
-              transition: ".25s",
-              color: "#fff",
-            }}
+            href="/admin/reservations"
+            className={`hf-admin-stat${stats.newReservations > 0 ? " highlight" : ""}`}
+            style={{ textDecoration: "none", color: "inherit" }}
           >
-            <div
-              style={{
-                fontSize: 36,
-                marginBottom: 15,
-              }}
-            >
-              {module.emoji}
-            </div>
+            <div className="hf-admin-stat-icon">🔔</div>
+            <div className="hf-admin-stat-value">{stats.newReservations}</div>
+            <div className="hf-admin-stat-label">Nouvelles réservations</div>
+          </Link>
+          <div className="hf-admin-stat">
+            <div className="hf-admin-stat-icon">📅</div>
+            <div className="hf-admin-stat-value">{stats.reservations}</div>
+            <div className="hf-admin-stat-label">Total réservations</div>
+          </div>
+          <div className="hf-admin-stat">
+            <div className="hf-admin-stat-icon">👥</div>
+            <div className="hf-admin-stat-value">{stats.coachs}</div>
+            <div className="hf-admin-stat-label">Coachs actifs</div>
+          </div>
+          <div className="hf-admin-stat">
+            <div className="hf-admin-stat-icon">🏋️</div>
+            <div className="hf-admin-stat-value">{stats.seances}</div>
+            <div className="hf-admin-stat-label">Séances</div>
+          </div>
+        </div>
+      )}
 
-            <h2
-              style={{
-                margin: 0,
-                color: "#d4af37",
-                fontSize: "clamp(22px,6vw,26px)",
-              }}
-            >
-              {module.titre}
-            </h2>
-
-            <p
-              style={{
-                color: "#bdbdbd",
-                marginTop: 12,
-                lineHeight: 1.6,
-                fontSize: "15px",
-              }}
-            >
-              {module.description}
-            </p>
+      <p className="hf-admin-section-title">Modules</p>
+      <div className="hf-admin-modules">
+        {modules.map((m, i) => (
+          <Link
+            key={m.titre}
+            href={m.lien}
+            className="hf-admin-module"
+            style={{ animationDelay: `${i * 0.05}s` }}
+          >
+            <div className="hf-admin-module-icon">{m.emoji}</div>
+            <h3>{m.titre}</h3>
+            <p>{m.description}</p>
           </Link>
         ))}
       </div>
+
+      {superAdmin && (
+        <>
+          <p className="hf-admin-section-title">Espace Club</p>
+          <div className="hf-admin-modules">
+            {clubModules.map((m, i) => (
+              <Link
+                key={m.titre}
+                href={m.lien}
+                className="hf-admin-module"
+                style={{ animationDelay: `${i * 0.05}s` }}
+              >
+                <div className="hf-admin-module-icon">{m.emoji}</div>
+                <h3>{m.titre}</h3>
+                <p>{m.description}</p>
+              </Link>
+            ))}
+          </div>
+        </>
+      )}
     </>
   );
 }

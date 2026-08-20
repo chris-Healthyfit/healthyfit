@@ -1,5 +1,6 @@
 import { put } from "@vercel/blob";
 import { NextRequest, NextResponse } from "next/server";
+import { auditMutation } from "@/lib/api-audit";
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,6 +17,12 @@ export async function POST(req: NextRequest) {
     const blob = await put(file.name, file, {
       access: "public",
       addRandomSuffix: true,
+    });
+
+    await auditMutation(req, {
+      action: "CREATE",
+      entity: "upload",
+      details: file.name,
     });
 
     return NextResponse.json({
