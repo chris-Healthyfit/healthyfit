@@ -180,7 +180,7 @@ export async function envoyerEmailsReservation(data: ReservationEmailData) {
     ),
     envoyerViaResend(
       ADMIN_EMAIL,
-      `🆕 Nouvelle réservation — ${data.prenom} ${data.nom}`,
+      `Nouvelle reservation — ${data.prenom} ${data.nom}`,
       emailAdmin(data)
     ),
   ]);
@@ -196,4 +196,29 @@ export async function envoyerEmailsReservation(data: ReservationEmailData) {
     admin: adminResult,
     missingApiKey,
   };
+}
+
+export function getEmailConfigStatus() {
+  const apiKey = process.env.RESEND_API_KEY?.trim();
+
+  return {
+    hasApiKey: Boolean(apiKey),
+    apiKeyPrefix: apiKey ? `${apiKey.slice(0, 8)}…` : null,
+    from: FROM_EMAIL,
+    adminEmail: ADMIN_EMAIL,
+    environment: process.env.VERCEL_ENV ?? process.env.NODE_ENV ?? "unknown",
+  };
+}
+
+export async function envoyerEmailTest(to: string) {
+  return envoyerViaResend(
+    to,
+    "HealthyFit — Test envoi email",
+    templateBase(
+      "Test d'envoi email",
+      `<p style="color:#ccc;line-height:1.7;font-size:16px;">
+        Si vous recevez ce message, l'envoi d'emails depuis le site HealthyFit fonctionne correctement.
+      </p>`
+    )
+  );
 }

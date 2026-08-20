@@ -57,6 +57,17 @@ export default function AdminReservations() {
   );
   const [selectionId, setSelectionId] = useState<number | null>(null);
   const [majEnCours, setMajEnCours] = useState<number | null>(null);
+  const [superAdmin, setSuperAdmin] = useState(false);
+  const [emailConfig, setEmailConfig] = useState<{
+    hasApiKey: boolean;
+    from: string;
+    adminEmail: string;
+    environment: string;
+  } | null>(null);
+  const [emailTest, setEmailTest] = useState("");
+  const [emailMessage, setEmailMessage] = useState("");
+  const [emailErreur, setEmailErreur] = useState("");
+  const [emailEnvoi, setEmailEnvoi] = useState(false);
 
   async function charger() {
     setLoading(true);
@@ -75,6 +86,52 @@ export default function AdminReservations() {
   useEffect(() => {
     charger();
   }, []);
+
+  useEffect(() => {
+    fetch("/api/me")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.isSuperAdmin) {
+          setSuperAdmin(true);
+          return fetch("/api/admin/email-test").then((res) =>
+            res.ok ? res.json() : null
+          );
+        }
+        return null;
+      })
+      .then((config) => {
+        if (config) {
+          setEmailConfig(config);
+          setEmailTest(config.adminEmail ?? "");
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  async function testerEmail() {
+    setEmailMessage("");
+    setEmailErreur("");
+    setEmailEnvoi(true);
+    try {
+      const res = await fetch("/api/admin/email-test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to: emailTest.trim() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setEmailErreur(data.error ?? "Échec de l'envoi.");
+        if (data.config) setEmailConfig(data.config);
+        return;
+      }
+      setEmailMessage(data.message ?? "Email envoyé.");
+      if (data.config) setEmailConfig(data.config);
+    } catch {
+      setEmailErreur("Erreur réseau.");
+    } finally {
+      setEmailEnvoi(false);
+    }
+  }
 
   const stats = useMemo(() => {
     const counts: Record<string, number> = { ALL: reservations.length };
@@ -142,6 +199,62 @@ export default function AdminReservations() {
           🔄 Actualiser
         </button>
       </div>
+
+      {superAdmin && emailConfig && (
+        <div
+          className="hf-admin-card"
+          style={{
+            marginBottom: 24,
+            borderColor: emailConfig.hasApiKey
+              ? "rgba(212,175,55,0.35)"
+              : "rgba(220,53,69,0.5)",
+          }}
+        >
+          <h2 className="hf-admin-form-title">📧 Diagnostic emails</h2>
+          <p className="hf-admin-entity-meta" style={{ marginBottom: 12 }}>
+            Environnement : <strong>{emailConfig.environment}</strong>
+            {" · "}
+            Clé Resend :{" "}
+            <strong>{emailConfig.hasApiKey ? "configurée ✓" : "MANQUANTE ✗"}</strong>
+            {" · "}
+            Expéditeur : <strong>{emailConfig.from}</strong>
+          </p>
+          {!emailConfig.hasApiKey && (
+            <p style={{ color: "#f87171", marginBottom: 12 }}>
+              Ajoutez <code>RESEND_API_KEY</code> sur Vercel (Settings → Environment
+              Variables), puis redeploy.
+            </p>
+          )}
+          <div
+            className="hf-admin-split"
+            style={{ gridTemplateColumns: "1fr auto", alignItems: "end", gap: 8 }}
+          >
+            <div className="hf-admin-field">
+              <label className="hf-admin-label">Email de test</label>
+              <input
+                className="hf-admin-input"
+                type="email"
+                value={emailTest}
+                onChange={(e) => setEmailTest(e.target.value)}
+              />
+            </div>
+            <button
+              type="button"
+              className="hf-admin-btn hf-admin-btn-sm"
+              onClick={testerEmail}
+              disabled={emailEnvoi || !emailTest.trim()}
+            >
+              {emailEnvoi ? "Envoi…" : "Envoyer test"}
+            </button>
+          </div>
+          {emailMessage && (
+            <p style={{ color: "#4ade80", marginTop: 12 }}>{emailMessage}</p>
+          )}
+          {emailErreur && (
+            <p style={{ color: "#f87171", marginTop: 12 }}>{emailErreur}</p>
+          )}
+        </div>
+      )}
 
       <div className="hf-admin-filters">
         <button
