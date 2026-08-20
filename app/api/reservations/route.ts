@@ -271,7 +271,7 @@ export async function POST(req: Request) {
       },
     });
 
-    envoyerEmailsReservation({
+    const emailResult = await envoyerEmailsReservation({
       nom: reservation.nom,
       prenom: reservation.prenom,
       telephone: reservation.telephone,
@@ -290,7 +290,11 @@ export async function POST(req: Request) {
       recommandation: reservation.recommandation,
       autreSource: reservation.autreSource,
       message: reservation.message,
-    }).catch((err) => console.error("Erreur envoi emails:", err));
+    });
+
+    if (!emailResult.ok) {
+      console.error("[Email] Échec envoi:", emailResult);
+    }
 
     return NextResponse.json(
       {

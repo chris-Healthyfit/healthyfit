@@ -120,7 +120,15 @@ function emailAdmin(data: ReservationEmailData) {
   );
 }
 
-async function envoyerViaResend(to: string, subject: string, html: string) {
+type EmailSendResult =
+  | { ok: true }
+  | { ok: false; skipped?: boolean; error?: string };
+
+async function envoyerViaResend(
+  to: string,
+  subject: string,
+  html: string
+): Promise<EmailSendResult> {
   const apiKey = process.env.RESEND_API_KEY;
 
   if (!apiKey) {
@@ -131,34 +139,40 @@ async function envoyerViaResend(to: string, subject: string, html: string) {
     return { ok: false, skipped: true };
   }
 
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: FROM_EMAIL,
-      to: [to],
-      reply_to: ADMIN_EMAIL,
-      subject,
-      html,
-    }),
-  });
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: FROM_EMAIL,
+        to: [to],
+        reply_to: ADMIN_EMAIL,
+        subject,
+        html,
+      }),
+    });
 
-  if (!response.ok) {
-    const error = await response.text();
-    console.error("[Email] Erreur Resend:", error);
-    return { ok: false, error };
+    if (!response.ok) {
+      const error = await response.text();
+      console.error("[Email] Erreur Resend:", to, error);
+      return { ok: false, error };
+    }
+
+    return { ok: true };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[Email] Exception Resend:", to, message);
+    return { ok: false, error: message };
   }
-
-  return { ok: true };
 }
 
 export async function envoyerEmailsReservation(data: ReservationEmailData) {
   const typeLabel = getTypeLabel(data.type as "SEANCE" | "BILAN");
 
-  const [clientResult, adminResult] = await Promise.allSettled([
+  const [clientResult, adminResult] = await Promise.all([
     envoyerViaResend(
       data.email,
       `HealthyFit — Votre demande de ${typeLabel.toLowerCase()} est bien reçue`,
@@ -171,5 +185,12 @@ export async function envoyerEmailsReservation(data: ReservationEmailData) {
     ),
   ]);
 
-  return { clientResult, adminResult };
+  const ok = clientResult.ok && adminResult.ok;
+
+  return {
+    ok,
+    client: clientResult,
+    admin: adminResult,
+    missingApiKey: clientResult.skipped || adminResult.skipped,
+  };
 }
